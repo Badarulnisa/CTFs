@@ -1,0 +1,65 @@
+----------------------------------------------------------------
+Challenge: Founder
+Platform:  KUBSTU CTF
+Category:  OSINT
+Points:    15
+Flag:      KUBSTU{Захарий_Чепега}
+----------------------------------------------------------------
+
+Objective
+----------------------------------------------------------------
+Identify the "main" ataman depicted at the base of the famous
+monument in the center of Krasnodar, Russia, and submit their
+name in the correct format.
+
+Tools Used
+----------------------------------------------------------------
+- Google Search
+- Wikipedia (English and Russian)
+- Visual analysis of the challenge image
+
+Steps
+----------------------------------------------------------------
+1. Read the challenge. It mentions a beautiful monument in the
+   center of Krasnodar with three atamans at its base. The hint
+   says "read the history." Flag format is KUBSTU{FirstName_LastName}
+   and shown in Cyrillic as KUBSTU{Имя_Фамилия}.
+
+2. Downloaded the attached image (image_2.png). It showed the
+   Catherine II monument in central Krasnodar. Three bronze
+   Cossack figures stand at the base. The name "АНТОН" (Anton)
+   is visibly inscribed on the plinth.
+
+3. Searched Google for the monument and identified the three
+   Black Sea Cossack leaders depicted:
+      - Zakhary Chepega  -- Kosh Ataman (chief rank)
+      - Anton Golovaty   -- Military judge, negotiated with Catherine
+      - Sidor Bely       -- First commander of the Cossack Host
+
+4. Determined that Zakhary Chepega held the highest title:
+   Kosh Ataman, making him the "main" one. Confirmed on the
+   Russian Wikipedia page: full name is
+   Захарий Алексеевич Чепега.
+
+5. Attempted multiple Latin transliterations -- all rejected:
+      KUBSTU{Zakhary_Chepega}   -- incorrect
+      KUBSTU{Zachary_Chepega}   -- incorrect
+      KUBSTU{Zakhary_Chepiha}   -- incorrect
+      KUBSTU{Zakhariy_Chepega}  -- incorrect
+
+6. Noticed the flag format in the challenge was shown in Cyrillic
+   (KUBSTU{Имя_Фамилия}). Switched to Cyrillic input:
+      KUBSTU{Захарий_Чепега}   -- CORRECT
+
+Key Takeaway
+----------------------------------------------------------------
+When a Russian CTF platform displays the flag format in Cyrillic,
+always try Cyrillic input first. Latin transliterations will be
+rejected even if historically accurate, because the platform
+does exact string matching. The language of the format hint is
+the language of the expected answer.
+
+Flag
+----------------------------------------------------------------
+KUBSTU{Захарий_Чепега}
+----------------------------------------------------------------
