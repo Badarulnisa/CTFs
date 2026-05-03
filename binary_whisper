@@ -1,0 +1,144 @@
+binary_whisper
+==============
+Platform : Private CTF
+Category : Forensics / Data Extraction
+Points   : 300
+Flag     : KubSTU{B1nary_D4t4_Str1ngs_R3v34l3d_7788}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+We were given a file called operational_data.bin and told to find
+a hidden message inside it. No other hints.
+
+------------------------------------------------------------------
+STEP 1 -- FIGURE OUT WHAT THE FILE IS
+------------------------------------------------------------------
+
+First thing you always do with an unknown file: ask the OS what it
+thinks it is.
+
+    file operational_data.bin
+
+Output: "data"
+
+That means the OS has no idea. No recognised magic bytes. Not a
+PNG, not an ELF, not a ZIP. Just raw bytes. Good start for a
+forensics challenge -- something is deliberately hidden.
+
+Remember: "data" from the file command just means "I don't
+recognise this." It does NOT mean the file is empty or broken.
+There is always something in there.
+
+------------------------------------------------------------------
+STEP 2 -- HARVEST STRINGS
+------------------------------------------------------------------
+
+The most basic forensics move: pull out all printable ASCII
+sequences. The -n 20 flag sets the minimum length to 20 chars
+so we skip tiny garbage fragments.
+
+    strings -n 20 operational_data.bin
+
+Nothing interesting showed up directly. No flag, no readable
+sentences. The data looked random.
+
+Remember: strings (without flags) only looks for standard 8-bit
+ASCII null-terminated sequences. If the file stores text in
+UTF-16 or with null-byte padding between each character, basic
+strings will see garbage and skip it entirely.
+
+------------------------------------------------------------------
+STEP 3 -- GREP FOR THE UNIVERSITY SIGNATURE
+------------------------------------------------------------------
+
+We knew the flag format starts with "KubSTU" so we piped strings
+output directly into grep to check:
+
+    strings -n 20 operational_data.bin | grep -E '[a-zA-Z0-9+/]{20,}'
+    strings operational_data.bin | grep KubSTU
+
+Both returned nothing. The flag is definitely obfuscated somehow.
+
+------------------------------------------------------------------
+STEP 4 -- HEX REVIEW WITH XXD
+------------------------------------------------------------------
+
+Time to look at the raw bytes. We used xxd to examine the file
+and look for anything flag-shaped:
+
+    xxd operational_data.bin | less
+
+Scrolling through, we found a region that looked like this:
+
+    4b 00 75 00 62 00 53 00 54 00 55 00 7b 00 ...
+     K       u       b       S       T       U  {
+
+Each ASCII character is followed by a null byte (0x00). This is
+the UTF-16 Little-Endian encoding. Each character takes 2 bytes:
+the actual character byte then 0x00.
+
+Standard strings sees: K . u . b . S . T . U . { ...
+(where . is a null byte)
+It treats those nulls as string terminators, so it thinks the
+string ends after every single character. It never sees "KubSTU"
+as one string. The flag is completely invisible to basic strings.
+
+Remember: UTF-16 LE stores every ASCII character as two bytes --
+the ASCII value followed by 0x00. This is the default text
+encoding on Windows, which is why this trick appears so often in
+CTFs using Windows-generated binary files.
+
+------------------------------------------------------------------
+STEP 5 -- EXTRACT WITH STRINGS -e l
+------------------------------------------------------------------
+
+The strings command has an encoding flag. The -e l option tells
+it to look for UTF-16 Little-Endian strings specifically:
+
+    strings -e l operational_data.bin
+
+Output:
+
+    KubSTU{B1nary_D4t4_Str1ngs_R3v34l3d_7788}
+
+Flag confirmed. The null-byte padding that broke basic strings is
+exactly what -e l is designed to handle.
+
+Remember: strings encoding flags:
+    -e s   = 7-bit ASCII (default)
+    -e S   = 8-bit ASCII
+    -e b   = 16-bit big-endian
+    -e l   = 16-bit little-endian   <-- Windows UTF-16 LE
+    -e B   = 32-bit big-endian
+    -e L   = 32-bit little-endian
+
+When basic strings fails on a binary forensics challenge, always
+try -e l and -e b before reaching for heavier tools.
+
+------------------------------------------------------------------
+FULL COMMAND SEQUENCE
+------------------------------------------------------------------
+
+    file operational_data.bin
+    strings -n 20 operational_data.bin | grep KubSTU
+    xxd operational_data.bin | grep -A2 "4b 00 75 00"
+    strings -e l operational_data.bin
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{B1nary_D4t4_Str1ngs_R3v34l3d_7788}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+Whenever strings finds nothing on a binary forensics challenge,
+the file is likely using a wide-character encoding. UTF-16 LE is
+by far the most common. The one-liner strings -e l is always
+worth trying before anything else. If that also fails, try -e b
+for big-endian. This single flag bypasses one of the most common
+beginner-level obfuscation tricks in forensics CTFs.
