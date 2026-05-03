@@ -49,7 +49,7 @@ Steps
 
 6. Noticed the flag format in the challenge was shown in Cyrillic
    (KUBSTU{Имя_Фамилия}). Switched to Cyrillic input:
-      KUBSTU{Захарий_Чепега}   -- CORRECT
+      KUBSTU{Захарий_Чепега}   --CORRECT
 
 Key Takeaway
 ----------------------------------------------------------------
