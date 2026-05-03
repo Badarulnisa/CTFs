@@ -19,7 +19,7 @@ Flag format: KubSTU{INN_of_management_company_DD.MM.YYYY}
 TOOLS USED
 ----------------------------------------------------------------
 1. Yandex / Bing - initial park identification
-2. TMview (tmdn.org) - international trademark database search
+2. TMview (tmdn.org)  international trademark database search
 3. FIPS / Rospatent (fips.ru) - Russian trademark registry
 4. rusprofile.ru - Russian company registry lookup
 5. biglion.ru - deal platform (revealed the managing entity)
