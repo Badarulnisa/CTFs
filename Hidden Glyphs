@@ -1,0 +1,86 @@
+Hidden Glyphs
+================
+Platform : KUBSTU CTF
+Category : Steganography
+Points   : 100
+Flag     : KubSTU{lsb_3xtr4ct1on_succ3ss}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+We were given a PNG file and told to find a flag hidden within
+the least significant bits of the image.
+
+------------------------------------------------------------------
+STEP 1 -- QUICK SCAN WITH ZSTEG
+------------------------------------------------------------------
+
+When a PNG challenge explicitly mentions LSB, zsteg is the
+fastest tool to reach for. It automatically tries every common
+LSB embedding scheme and reports anything that looks like text.
+
+    zsteg image.png
+
+zsteg scanned all bit planes and channel combinations and
+immediately reported a hit on the b1,rgb,lsb,xy sequence:
+
+    b1,rgb,lsb,xy    .. text: "KubSTU{lsb_3xtr4ct1on_succ3ss}"
+
+Flag found in a single command.
+
+Remember: zsteg notation explained:
+    b1        = 1 bit per channel (LSB only)
+    rgb       = using all three color channels
+    lsb       = reading the least significant bit
+    xy        = scanning pixels left to right, top to bottom
+This is the most common LSB embedding configuration used in
+CTF challenges. It is always the first thing zsteg checks, so
+if the flag is there at all, zsteg will find it instantly.
+
+------------------------------------------------------------------
+STEP 2 -- UNDERSTAND WHAT WAS FOUND
+------------------------------------------------------------------
+
+LSB steganography works by replacing the least significant bit
+of each pixel's color value with one bit of hidden data. A pixel
+with blue value 200 (11001000 in binary) becomes 201
+(11001001) when a 1 bit is embedded, or stays 200 when a 0 bit
+is embedded. The visual difference is completely invisible to
+the human eye -- one shade of blue that differs by 1 out of 255
+is indistinguishable.
+
+The hidden bits are then reassembled in order (left to right,
+top to bottom across pixels) to reconstruct the original bytes
+of the hidden message.
+
+Remember: LSB steganography cannot be spotted visually. You need
+a tool like zsteg, StegSolve, or stegpy to detect it. zsteg is
+the fastest for PNGs because it tries all common configurations
+automatically and outputs readable text directly. Always run
+zsteg as your first command on any PNG steganography challenge
+before reaching for heavier tools.
+
+------------------------------------------------------------------
+FULL COMMAND SEQUENCE
+------------------------------------------------------------------
+
+    zsteg image.png
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{lsb_3xtr4ct1on_succ3ss}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+For PNG steganography challenges involving LSB, zsteg is a
+one-command solution. Install it with gem install zsteg and run
+it on any suspicious PNG. It checks b1 through b8 across all
+channel combinations and prints anything that decodes to
+readable text. If zsteg finds nothing, move to StegSolve for
+manual bit plane inspection. LSB data is invisible to the eye
+but trivially detected by these tools.
