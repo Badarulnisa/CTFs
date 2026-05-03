@@ -1,0 +1,115 @@
+KubSTU CTF 2026 - OSINT Writeup
+----------------------------------------------------------------
+Challenge: City that doesn't exist (928 points)
+Category:  OSINT
+Author:    @borsch_krd
+----------------------------------------------------------------
+
+OBJECTIVE
+----------------------------------------------------------------
+Identify the Russian legal entity that managed a children's
+themed park (a licensed clone of a foreign concept) in a major
+southern Russian mall, and find the date that entity submitted
+a trademark application through Rospatent (Russia's IP registry).
+
+Flag format: KubSTU{INN_of_management_company_DD.MM.YYYY}
+
+----------------------------------------------------------------
+
+TOOLS USED
+----------------------------------------------------------------
+1. Yandex / Bing - initial park identification
+2. TMview (tmdn.org) - international trademark database search
+3. FIPS / Rospatent (fips.ru) - Russian trademark registry
+4. rusprofile.ru - Russian company registry lookup
+5. biglion.ru - deal platform (revealed the managing entity)
+
+----------------------------------------------------------------
+
+STEPS
+----------------------------------------------------------------
+
+Step 1 - Identify the park and mall
+   The challenge title "City that doesn't exist" and the clue
+   "licensed clone of a foreign concept" pointed to a KidZania-
+   style children's city-of-professions park. Searched for such
+   parks in Krasnodar (home of KubSTU, southern Russia).
+
+   Search: "детский город профессий Краснодар ОЗ Молл"
+
+   Found: MINOPOLIS - an interactive children's park at
+   OZ Mall (ул. Крылатая, 2, Краснодар, 3rd floor).
+   The concept originates from Austria/Belgium (KCC
+   Entertainment Design). In 2019, it renamed to ZkidZ City.
+   This matches all challenge conditions.
+
+   [Image: Challenge description screenshot]
+
+
+Step 2 - Find the trademark submission in Rospatent
+   Searched TMview (tmdn.org) for "MINOPOLIS".
+   Found a Russian Federation trademark:
+     - Name:        MINOPOLIS
+     - App number:  2018756480
+     - App date:    20/12/2018
+     - Status:      Registered
+     - Owner:       Минополис Уорлдуайд Эдьютейнмент ЛЛК
+
+   Confirmed via FIPS record RU723853:
+     (210) Application number: 2018756480
+     (220) Application submission date: 20.12.2018
+     (151) Date of state registration: 19.08.2019
+     Rights holder: Minopolis Worldwide Education LLC
+                    (Delaware, USA)
+
+   Filing date confirmed: 20.12.2018
+
+   [Image: FIPS official record RU723853 showing submission date]
+
+
+Step 3 - Find the Russian management company INN
+   The original ТПКО Минополис Краснодар (INN 2312196680) was
+   liquidated October 2014 but the park ran until 2019. A
+   successor operated it.
+
+   Found the answer via a Biglion.ru deal listing for
+   Minopolis (October 2018). The terms of service stated:
+
+     "Tickets are paid according to the price list of
+      ООО «Детство+». ООО «Детство+» has the right to
+      refuse coupon activation."
+
+   Looked up ООО "Детство+" on rusprofile.ru:
+     Full name: ООО "ДЕТСТВО +"
+     INN:       2312206762
+     OGRN:      1132312009719
+     Address:   Краснодар, Крылатая ул., д. 2 (OZ Mall)
+     Activity:  Entertainment and recreational activities
+     Registered: 16.09.2013
+     Liquidated: 23.04.2021 (by reorganization/merger)
+
+   Perfect match: same address as Minopolis, active during
+   the trademark filing period, entertainment activity.
+
+   [Image: rusprofile listing showing ООО "Детство+" INN 2312206762
+           at Krylata 2 address]
+
+
+----------------------------------------------------------------
+
+KEY TAKEAWAY
+----------------------------------------------------------------
+The trick was that the original company (ТПКО Минополис) was
+already dissolved in 2014, but a different entity (ООО Детство+)
+had been operating the park since 2013. The management company
+was revealed not through EGRUL searches, but through a third-
+party deal platform's legal fine print (Biglion). The trademark
+was filed by the US-based franchisor in December 2018, right
+before the 2019 rebrand to ZkidZ.
+
+----------------------------------------------------------------
+
+FLAG
+----------------------------------------------------------------
+KubSTU{2312206762_20.12.2018}
+----------------------------------------------------------------
