@@ -1,1 +1,1 @@
-# CTFs
+# RUSSIAN CTFs
