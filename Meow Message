@@ -1,0 +1,111 @@
+Meow Message
+==============
+Platform : KUBSTU CTF
+Category : Cryptography
+Points   : 100
+Flag     : KubSTU{X0R_th3_n1ghtm4r3_530}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+We were given a "secret message" found in lecture notes -- a
+string of hexadecimal values. The number 530 appeared
+prominently in the challenge description.
+
+------------------------------------------------------------------
+STEP 1 -- CIPHER IDENTIFICATION
+------------------------------------------------------------------
+
+The message was a raw hex string. We converted it mentally to
+bytes and looked at its properties:
+
+    - No obvious structure (not Base64, not standard encoding)
+    - Length consistent with a short plaintext message
+    - The number 530 was emphasized in the challenge
+
+530 has three digits, which is a natural length for a repeating
+XOR key. Multi-byte XOR with a short key is one of the most
+common beginner cryptography challenges.
+
+Remember: when a challenge gives you a hex string and emphasizes
+a number or word alongside it, that number or word is almost
+certainly the XOR key. XOR ciphers are identified by the absence
+of any other obvious encoding structure and by the fact that the
+ciphertext length exactly matches the plaintext length.
+
+------------------------------------------------------------------
+STEP 2 -- WRITE THE DECRYPTION SCRIPT
+------------------------------------------------------------------
+
+XOR decryption and encryption are identical operations -- XOR is
+its own inverse. We wrote a short Python script using the key
+b"530" (the ASCII bytes of the string "530"):
+
+    data = bytes.fromhex("1a2b3c...")   # the hex string from challenge
+    key  = b"530"
+    flag = "".join(chr(data[i] ^ key[i % len(key)]) for i in range(len(data)))
+    print(flag)
+
+The key repeats cyclically across the data using i % len(key).
+For a 3-byte key this means:
+    byte 0 XOR key[0]  ('5')
+    byte 1 XOR key[1]  ('3')
+    byte 2 XOR key[2]  ('0')
+    byte 3 XOR key[0]  ('5')
+    byte 4 XOR key[1]  ('3')
+    ...and so on.
+
+Remember: i % len(key) is the standard pattern for repeating-key
+XOR. When the key is a string like "530", convert it to bytes
+with b"530" so Python treats each character as its ASCII integer
+value. chr() converts the resulting integer back to a character.
+This exact script works for any repeating XOR challenge -- just
+swap in the hex data and the key.
+
+------------------------------------------------------------------
+STEP 3 -- RUN AND VERIFY
+------------------------------------------------------------------
+
+We ran the script:
+
+    python3 solve.py
+
+Output: KubSTU{X0R_th3_n1ghtm4r3_530}
+
+The output starts with KubSTU{ and ends with }, confirming the
+key and decryption were correct.
+
+Remember: always verify XOR decryption by checking that the
+output starts with the known flag prefix. If it does not, either
+the key is wrong or the hex data has a leading offset. Try
+skipping the first few bytes of the hex string or try the key
+reversed, uppercased, and lowercased before anything else.
+
+------------------------------------------------------------------
+FULL COMMAND SEQUENCE
+------------------------------------------------------------------
+
+    python3 - << 'PYEOF'
+    data = bytes.fromhex("1a2b3c...")
+    key  = b"530"
+    flag = "".join(chr(data[i] ^ key[i % len(key)]) for i in range(len(data)))
+    print(flag)
+    PYEOF
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{X0R_th3_n1ghtm4r3_530}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+Repeating-key XOR is one of the most common beginner crypto
+challenges. The key is almost always visible in the challenge
+description. The decryption script is always the same three
+lines: load hex with bytes.fromhex(), define the key as bytes,
+then XOR each byte with key[i % len(key)]. Verify by checking
+the known flag prefix appears at the start of the output.
