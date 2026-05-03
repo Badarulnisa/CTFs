@@ -1,0 +1,82 @@
+----------------------------------------------------------------
+Challenge: Is the Report in English?
+Platform:  KUBSTU CTF
+Category:  Forensics / PDF Analysis
+Points:    568
+Flag:      KubSTU{PDF_M3t4d4t4_F0r3ns1cs_4dv4nc3d_Ch4ll3ng3_2025_S3cur3_Emb3dd3d_F1l3_3ncrypt10n_Pr0t0c0l}
+----------------------------------------------------------------
+
+Objective
+----------------------------------------------------------------
+A suspicious financial report PDF arrived by email. Analyze it
+to find the hidden flag.
+
+Tools Used
+----------------------------------------------------------------
+- binwalk (embedded file detection and extraction)
+- dd (manual binary extraction)
+- unzip (archive extraction)
+- strings (string extraction from binary)
+- exiftool (PDF metadata analysis)
+
+Steps
+----------------------------------------------------------------
+1. Downloaded the attached file: KUBSTU_Financial_Report_2025.pdf
+
+2. Ran binwalk to detect embedded files:
+
+      binwalk KUBSTU_Financial_Report_2025.pdf
+
+   Output revealed:
+      Offset 0     -- PDF document version 1.7
+      Offset 2122  -- ZIP archive (encrypted), compressed size 405,
+                      uncompressed size 551
+                      filename: confidential_flag.txt
+      Offset 2677  -- End of ZIP archive
+      Offset 36503 -- Intel HEX data
+
+3. The PDF body contained plaintext credentials:
+      ARCHIVE FILENAME: KUBGTU_FINANCIAL_DATA_2025.ZIP
+      ARCHIVE ACCESS PASSWORD: FinanceKubSTU2025!
+
+4. Used dd to manually carve the ZIP from the PDF:
+
+      dd if=KUBSTU_Financial_Report_2025.pdf of=hidden.zip \
+         bs=1 skip=2122 count=577
+
+5. Extracted the ZIP with the password found in the PDF:
+
+      unzip -P 'FinanceKubSTU2025!' hidden.zip
+
+   Result: extracted confidential_flag.txt/tmpb1ln4mfr.txt
+
+6. Read the extracted file:
+
+      cat confidential_flag.txt/tmpb1ln4mfr.txt
+
+   The first line contained the flag. The rest of the file was
+   a fake security alert designed to mislead analysts.
+
+7. The decoy flag KubSTU{F4k3_Fl4g_D3c3pt10n_...} was visible
+   and intentionally named to waste time. The real flag was
+   found by reading the raw strings in the Intel HEX section
+   at offset 36503:
+
+      strings KUBSTU_Financial_Report_2025.pdf | grep -v \
+      "FAKE\|DUMMY\|DECOY\|MOCK\|TEST\|F4k3\|Unauthorized"
+
+   Which revealed the real flag embedded in plaintext in the
+   data section of the PDF.
+
+Key Takeaway
+----------------------------------------------------------------
+PDF files can embed arbitrary file types beyond their visible
+content. Always run binwalk on suspicious documents to detect
+hidden archives, images, or executables. When a fake flag is
+found first, look deeper -- challenge authors often layer
+multiple decoys to slow down analysis.
+
+Flag
+----------------------------------------------------------------
+KubSTU{PDF_M3t4d4t4_F0r3ns1cs_4dv4nc3d_Ch4ll3ng3_2025_S3cur3_Emb3dd3d_F1l3_3ncrypt10n_Pr0t0c0l}
+----------------------------------------------------------------
