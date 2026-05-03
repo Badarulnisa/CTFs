@@ -1,0 +1,202 @@
+mutant
+======
+Platform : KUBSTU CTF
+Category : Forensics 
+Difficulty: Medium
+Flag     : KubSTU{pdf_0bj3ct_m4st3r_v2}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+We were given a file called crypt.pdf. It looked like standard
+educational material for an information security exam. The name
+"Mutant" suggested something was hidden inside the file structure
+using non-standard methods.
+
+------------------------------------------------------------------
+STEP 1 -- SURFACE CHECKS
+------------------------------------------------------------------
+
+Before diving into the PDF internals, we ran the standard
+first-pass checks that catch easy wins.
+
+    exiftool crypt.pdf
+    strings crypt.pdf | grep -i "kubstu\|flag\|ctf"
+
+Neither returned a flag. Author, Title, and other metadata fields
+contained only legitimate-looking content. No plaintext flag
+embedded in the string output.
+
+    binwalk crypt.pdf
+
+binwalk confirmed a standard PDF header at offset 0 and found
+nothing appended to the tail. No ZIP, no PNG, no second file
+hiding inside. This is not a polyglot file.
+
+Remember: always run these three commands first on any forensics
+challenge file. exiftool catches flags hidden in metadata fields.
+strings catches flags stored as plaintext anywhere in the binary.
+binwalk catches nested files appended after the real file ends.
+If all three return nothing, the hiding method is more subtle and
+you need to go deeper into the file format itself.
+
+------------------------------------------------------------------
+STEP 2 -- INSPECT THE RAW PDF STRUCTURE
+------------------------------------------------------------------
+
+PDFs are text-based at their core. You can read the raw content
+directly. We opened the file in a text editor and searched for
+anything unusual.
+
+    cat crypt.pdf | less
+
+PDF comments start with the % character. Standard PDFs have a
+few comment lines at the top (%PDF-1.x, %%EOF). We found an
+extra comment block containing a large encoded string that had
+no business being there. It started with <~ and ended with ~>.
+
+That is the signature of Ascii85 encoding, also called Base85
+(Adobe variant). This is not something that appears in a normal
+PDF comment. The data was hidden here because casual inspection
+of the PDF in a viewer shows nothing -- viewers render the visual
+content and completely ignore comment blocks.
+
+Remember: the % character in a PDF marks everything after it on
+that line as a comment, ignored by PDF renderers. This makes
+comments invisible to anyone viewing the file normally. They are
+only visible when you read the raw bytes. Always run cat or
+strings and grep for large blocks of non-standard characters
+in PDF challenges. The <~ and ~> delimiters are a reliable
+Ascii85 signature.
+
+------------------------------------------------------------------
+STEP 3 -- DECODE THE ASCII85 BLOCK
+------------------------------------------------------------------
+
+We extracted the full encoded string from the comment block and
+decoded it. Two options:
+
+Option A -- CyberChef (no code needed):
+    Paste the string into CyberChef
+    Apply the recipe: From Base85 (Adobe variant)
+    Download the output
+
+Option B -- Python one-liner:
+
+    python3 -c "
+    import base64
+    data = b'Gat\$\$gMS6...'   # full string from the PDF comment
+    print(base64.b85decode(data).decode())
+    "
+
+The decoded output was a text file we saved as decoded_output.txt.
+
+Remember: Python's base64.b85decode() handles the Adobe Ascii85
+variant used by PDFs. The encoded string must not include the
+<~ and ~> wrapper delimiters -- strip those before passing it to
+the decoder. If you get a decoding error, check that you copied
+the full string without any line breaks or spaces introduced by
+the text editor.
+
+------------------------------------------------------------------
+STEP 4 -- ANALYZE THE DECODED PDF OBJECTS
+------------------------------------------------------------------
+
+The decoded text contained raw PDF text-positioning operators.
+Each line placed a single character at specific coordinates on
+a page using the PDF graphics model:
+
+    BT 1 0 0 1 50 100 Tm (K) Tj ET
+    BT 1 0 0 1 62 100 Tm (u) Tj ET
+    BT 1 0 0 1 74 100 Tm (b) Tj ET
+    ...
+
+Breaking down the syntax:
+    BT          = Begin Text block
+    Tm          = Text Matrix (sets position: x y)
+    (char) Tj   = draw character at current position
+    ET          = End Text block
+
+The coordinates are: x position, then y position (height).
+Different y values place text at different vertical levels on
+the page.
+
+Remember: PDF uses a coordinate system where y=0 is the bottom
+of the page and y increases upward. Text placed at y=100 appears
+near the bottom. Text at y=450 appears near the top. When you
+see many Tj operators at different y coordinates in decoded PDF
+content, sort them by y value to separate distinct text layers
+from each other.
+
+------------------------------------------------------------------
+STEP 5 -- FILTER OUT THE DECOYS
+------------------------------------------------------------------
+
+We grouped all characters by their y coordinate:
+
+    grep "Tj" decoded_output.txt | sort -k6 -n
+
+Three distinct layers appeared:
+
+    y = 450  ->  CTF{you_are_close_but_not_yet}
+    y = 300  ->  FAKE{this_is_not_the_flag_try_harder}
+    y = 100  ->  KubSTU{pdf_0bj3ct_m4st3r_v2}
+
+The first two are decoys placed at higher y values to catch
+solvers who stop at the first flag-shaped string they find.
+The real flag sits at y=100, the lowest layer.
+
+We extracted only the y=100 characters in x-coordinate order:
+
+    grep "100 Tm" decoded_output.txt | grep -oP '\(\w\)' | tr -d '()'
+
+Output: K u b S T U { p d f _ 0 b j 3 c t _ m 4 s t 3 r _ v 2 }
+
+Remember: CTF challenges that hide data inside decoded payloads
+almost always include decoy strings to waste your time. When you
+see multiple flag-shaped outputs from the same source, extract
+ALL of them, identify the one matching the exact known flag
+format (KubSTU{ for this CTF), and verify it sorts correctly
+by whatever coordinate or ordering the data uses. Never submit
+the first flag-looking string you find without checking the rest.
+
+------------------------------------------------------------------
+FULL COMMAND SEQUENCE
+------------------------------------------------------------------
+
+    exiftool crypt.pdf
+    strings crypt.pdf | grep -i "kubstu\|flag\|ctf"
+    binwalk crypt.pdf
+    cat crypt.pdf | less
+    -> find % comment block with <~ ... ~> encoded string
+    -> copy full encoded string to data.txt, strip <~ and ~>
+
+    python3 -c "
+    import base64
+    data = open('data.txt','rb').read().strip()
+    print(base64.b85decode(data).decode())
+    " > decoded_output.txt
+
+    grep "Tj" decoded_output.txt | sort -k6 -n
+    grep "100 Tm" decoded_output.txt | grep -oP '\(\w\)' | tr -d '()'
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{pdf_0bj3ct_m4st3r_v2}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+PDFs are text-based containers with a rich internal object model.
+Comments (% lines) are invisible to viewers but fully present in
+the raw bytes. Ascii85 encoded data inside a PDF comment is a
+clean hiding spot because nothing in normal PDF usage puts large
+encoded blobs there. When you find decoded PDF graphics operators,
+read the coordinate system: different y values mean different
+text layers, and challenge authors always plant decoys at higher
+layers to slow you down. Always extract every layer and identify
+the one that matches the real flag format before submitting.
