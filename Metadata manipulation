@@ -1,0 +1,104 @@
+metadata manipulation
+=====================
+Platform : KUBSTU CTF
+Category : Steganography
+Points   : 100
+Flag     : KubSTU{m3t4d4t4_m4g1c_88}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+We were given image_94a08a.png. The image looked completely
+normal. A high-value stego challenge with no obvious clues.
+
+------------------------------------------------------------------
+STEP 1 -- EXIF ANALYSIS
+------------------------------------------------------------------
+
+When an image looks clean and visual analysis reveals nothing,
+metadata is the next stop. exiftool reads every metadata field
+stored inside a file.
+
+    exiftool image_94a08a.png
+
+Most fields were standard. But the Custom Artist field contained
+a massive amount of data -- far more than any legitimate artist
+field would ever hold.
+
+Remember: legitimate EXIF fields like Artist, Author, and
+Comment are short strings. If any field contains hundreds or
+thousands of characters, that is the hiding spot. exiftool
+prints all fields in one pass -- scroll through the full output
+and look for anything that seems disproportionately large.
+
+------------------------------------------------------------------
+STEP 2 -- EXTRACT THE ANOMALOUS DATA
+------------------------------------------------------------------
+
+We copied the full contents of the Custom Artist field. The data
+was a long hexadecimal string -- recognisable because it only
+contained the characters 0-9 and a-f.
+
+We saved it to a file for processing:
+
+    echo "4b756253545..." > hex_data.txt
+
+Remember: hex-encoded data in metadata is easy to spot because
+it only uses the characters 0123456789abcdef and its length is
+always even. If you see a massive field with only those
+characters, it is hex-encoded binary data. Convert it and see
+what file comes out.
+
+------------------------------------------------------------------
+STEP 3 -- CONVERT HEX TO FILE
+------------------------------------------------------------------
+
+We converted the hex string back to its original binary form:
+
+    xxd -r -p hex_data.txt output_file
+
+Then checked what it was:
+
+    file output_file
+
+It came back as a plain text file. We read it:
+
+    cat output_file
+
+The flag was inside in plaintext.
+
+Remember: xxd -r -p reverses a plain hex dump (no offsets, no
+ASCII column) back into binary. This is the standard one-liner
+for converting raw hex strings to files. After conversion always
+run file on the result -- the recovered data could be a txt, a
+zip, an image, or anything else, and you need to know before
+you try to read it.
+
+------------------------------------------------------------------
+FULL COMMAND SEQUENCE
+------------------------------------------------------------------
+
+    exiftool image_94a08a.png
+    -> Copy Custom Artist field contents to hex_data.txt
+    xxd -r -p hex_data.txt output_file
+    file output_file
+    cat output_file
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{m3t4d4t4_m4g1c_88}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+Metadata fields are a low-effort, high-reward hiding spot in
+steganography challenges. Always run exiftool as one of your
+first moves on any image. Look for fields that are unusually
+large or contain data that does not match what the field is
+supposed to hold. Hex encoding is one of the most common ways
+to hide binary data in a text metadata field -- convert it with
+xxd -r -p and check what file type emerges.
