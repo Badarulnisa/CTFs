@@ -33,7 +33,7 @@ Steps
                       uncompressed size 551
                       filename: confidential_flag.txt
       Offset 2677  -- End of ZIP archive
-      Offset 36503 -- Intel HEX data
+      Offset 36503 --Intel HEX data
 
 3. The PDF body contained plaintext credentials:
       ARCHIVE FILENAME: KUBGTU_FINANCIAL_DATA_2025.ZIP
