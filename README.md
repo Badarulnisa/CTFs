@@ -1,1 +1,1 @@
-# RUSSIAN CTFs
+# kubSTU RUSSIAN CTFs
