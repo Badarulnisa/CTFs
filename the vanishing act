@@ -1,0 +1,103 @@
+the vanishing act
+=================
+Platform : KUBSTU CTF
+Category : Steganography
+Points   : 100
+Flag     : KubSTU{blu3_pl4n3_v1s1on}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+We were given a file called image_94a0c5.png. The description
+said to find a secret message left by the "sleeping capybara."
+The image looked completely normal.
+
+------------------------------------------------------------------
+STEP 1 -- LOAD INTO STEGSOLVE
+------------------------------------------------------------------
+
+When a PNG looks visually normal but hides data, bit-plane
+analysis is the standard first move. StegSolve lets you isolate
+individual color and bit planes of an image with arrow-key
+navigation.
+
+    java -jar StegSolve.jar
+
+We opened image_94a0c5.png and cycled through all available
+planes using the forward and backward arrows.
+
+Remember: RGB images have three color channels (Red, Green,
+Blue) and each channel has 8 bit planes (bit 0 through bit 7,
+where bit 0 is the Least Significant Bit). StegSolve shows you
+each plane as a black-and-white image. A plane with hidden data
+will show structured patterns -- shapes, text, or QR codes --
+that look completely different from the random noise you see in
+a clean image's low bit planes.
+
+------------------------------------------------------------------
+STEP 2 -- DISCOVER THE QR CODE
+------------------------------------------------------------------
+
+On the Blue 0 plane (the least significant bit of the blue
+channel), a clear QR code appeared in the upper-right corner of
+the image. It was completely invisible in the normal RGB view.
+
+This is classic LSB steganography in a single color channel.
+The QR code was embedded one bit at a time into the blue
+channel's LSB across the pixels in that region. The visual
+difference in blue intensity is too small for the human eye to
+notice but StegSolve isolates it perfectly.
+
+Remember: Blue 0 means the LSB (bit plane 0) of the Blue
+channel. This is one of the most common hiding spots in PNG
+steganography because the human eye is least sensitive to small
+changes in blue compared to red and green. Always check all
+three channel LSBs (Red 0, Green 0, Blue 0) when a PNG challenge
+has no obvious clues.
+
+------------------------------------------------------------------
+STEP 3 -- DECODE THE QR CODE
+------------------------------------------------------------------
+
+We saved the Blue 0 plane as an image from StegSolve using
+File -> Save As, then scanned the QR code with any QR reader
+(phone camera, or zxing online decoder).
+
+The QR code decoded to a URL pointing to a pastebin page. The
+pastebin contained the flag in plaintext.
+
+Remember: when a QR code from StegSolve is hard to scan because
+the image is small or blurry, save the plane image and upscale
+it first using an image editor before scanning. Alternatively,
+zxing.appspot.com accepts image uploads and is more tolerant of
+low-resolution QR codes than phone cameras.
+
+------------------------------------------------------------------
+FULL COMMAND SEQUENCE
+------------------------------------------------------------------
+
+    java -jar StegSolve.jar
+    -> Open image_94a0c5.png
+    -> Cycle to Blue 0 plane
+    -> QR code visible in upper-right corner
+    -> File -> Save As -> blue0_plane.png
+    Scan QR code -> URL -> pastebin -> flag
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{blu3_pl4n3_v1s1on}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+When a PNG image challenge gives no obvious surface clues, open
+StegSolve and cycle through every bit plane before using any
+other tool. The LSB of the Blue channel (Blue 0) is the single
+most common hiding spot in PNG steganography. Structured shapes
+like QR codes, barcodes, or text in any bit plane immediately
+confirm hidden data. Everything else in that plane will look
+like random noise.
