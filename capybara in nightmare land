@@ -1,0 +1,143 @@
+capybara in nightmare land
+==========================
+Platform : KUBSTU CTF
+Category : Steganography
+Points   : 100
+Flag     : KubSTU{th3_n1ghtm4r3_1s_ov3r_530}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+We were given a file called capybara_nightmare.jpg and told that
+"not everything is as it seems." We needed to find a hidden flag.
+
+------------------------------------------------------------------
+STEP 1 -- FILE IDENTIFICATION
+------------------------------------------------------------------
+
+First move with any unknown file: confirm what it actually is.
+
+    file capybara_nightmare.jpg
+
+Output: JPEG image data, standard format.
+
+Nothing unusual on the surface. It opens as a normal image. The
+challenge is telling us something is hidden inside it, not that
+the file format itself is broken.
+
+Remember: the file command reads the magic bytes at the start of
+a file, not the extension. A .jpg renamed to .txt would still
+return "JPEG image data." If the output matches the extension,
+the container is legitimate -- the hidden content is buried
+somewhere inside it.
+
+------------------------------------------------------------------
+STEP 2 -- STRINGS ANALYSIS
+------------------------------------------------------------------
+
+Running strings on an image file pulls out any readable text
+sequences embedded in the binary. This catches things hidden
+after the actual image data ends.
+
+    strings capybara_nightmare.jpg
+
+Near the end of the output we found a suspicious Base64 string
+appearing after the FF D9 marker. FF D9 is the JPEG end-of-file
+marker. Anything after it is invisible to image viewers but
+fully present in the file bytes.
+
+Remember: JPEG files end at FF D9. Image viewers stop reading
+there. But the operating system stores every byte in the file,
+including anything appended after that marker. This is one of
+the oldest and simplest steganography tricks -- just append data
+after the EOF marker of a valid image. strings will always catch
+readable text hiding there.
+
+------------------------------------------------------------------
+STEP 3 -- BINWALK EXTRACTION
+------------------------------------------------------------------
+
+The Base64 string suggested embedded data. We ran binwalk to
+scan for nested file signatures inside the JPEG.
+
+    binwalk capybara_nightmare.jpg
+
+binwalk found a ZIP archive signature starting at a specific
+offset inside the file. We extracted it:
+
+    binwalk -e capybara_nightmare.jpg
+
+This created an output folder containing the hidden ZIP archive.
+
+Remember: binwalk scans a file for known magic byte sequences
+of hundreds of file formats and reports every offset where it
+finds one. The -e flag automatically extracts everything it
+finds. After extraction, check the output folder -- binwalk
+names it with an underscore prefix matching the original
+filename.
+
+------------------------------------------------------------------
+STEP 4 -- DECRYPT THE ZIP
+------------------------------------------------------------------
+
+The extracted ZIP was password-protected. The challenge
+description mentioned the number 530 prominently. We tried it
+as the password.
+
+    unzip _capybara_nightmare.jpg.extracted/archive.zip
+
+Password prompt: 530
+
+The archive unlocked and contained a file called image_94a08a.png.
+
+Remember: in CTF steganography challenges, the password for a
+protected archive is almost always hidden in the challenge
+description itself -- as a number, a word, or something visible
+in the image. Read the description carefully before trying
+wordlists. The hint is usually right there.
+
+------------------------------------------------------------------
+STEP 5 -- CHECK METADATA OF EXTRACTED FILE
+------------------------------------------------------------------
+
+We opened image_94a08a.png. It looked like a normal image. We
+checked its metadata:
+
+    exiftool image_94a08a.png
+
+The Comment field contained the flag in plaintext.
+
+Remember: after extracting a hidden file from a steganography
+challenge, always run exiftool on it before anything else.
+Metadata fields like Comment, Artist, Description, and
+UserComment are extremely common hiding spots and exiftool
+reads all of them in one command.
+
+------------------------------------------------------------------
+FULL COMMAND SEQUENCE
+------------------------------------------------------------------
+
+    file capybara_nightmare.jpg
+    strings capybara_nightmare.jpg
+    binwalk capybara_nightmare.jpg
+    binwalk -e capybara_nightmare.jpg
+    unzip _capybara_nightmare.jpg.extracted/archive.zip
+    exiftool image_94a08a.png
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{th3_n1ghtm4r3_1s_ov3r_530}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+Steganography in JPEGs often hides data after the FF D9 EOF
+marker. binwalk will find it automatically and extract nested
+archives. Password hints are almost always visible in the
+challenge description. After any extraction, always check
+metadata with exiftool before doing anything else -- the flag
+is often sitting in a comment field waiting to be read.
