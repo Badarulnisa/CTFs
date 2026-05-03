@@ -1,0 +1,78 @@
+----------------------------------------------------------------
+Challenge: The Captured Agent
+Platform:  KUBSTU CTF
+Category:  Network Forensics / PCAP Analysis
+Points:    450
+Flag:      KubSTU{N3tw0rk_Forensics_Pr0_2026_D3crypt_TCP_Str34m}
+----------------------------------------------------------------
+
+Objective
+----------------------------------------------------------------
+Analyze a network capture (challenge.pcap) to recover the
+password sent by a field agent during an automated check-in.
+
+Tools Used
+----------------------------------------------------------------
+- tshark (command-line packet analysis)
+- grep / strings (pattern searching)
+- base64 (payload decoding)
+
+Steps
+----------------------------------------------------------------
+1. Loaded the PCAP and ran a traffic overview to identify
+   active nodes. Found high-frequency communication between
+   two hosts: 172.20.0.2 and 172.20.0.3.
+
+      tshark -r challenge.pcap 2>/dev/null | head -30
+
+2. Filtered for common protocols (HTTP, FTP, DNS). Noticed
+   suspicious traffic labelled as MEMCACHE Continuation and
+   generic TCP Continuation Data on non-standard ports such
+   as 7777, 54321, 31337, and 4444. These indicated a custom
+   protocol running over raw TCP.
+
+3. Followed TCP streams one by one to isolate meaningful
+   sessions:
+
+      tshark -r challenge.pcap -q -z follow,tcp,ascii,3 \
+      2>/dev/null
+
+   Stream 3 contained a plaintext FTP session where an agent
+   logged in with cleartext credentials:
+
+      USER logistics
+      PASS kr1ll_supp1y
+
+4. Continued following remaining streams. Located a stream
+   containing a Base64-encoded payload. Identified it by
+   searching for the signature S3Vi, which is the Base64
+   encoding of the string KubS (the start of KubSTU):
+
+      strings challenge.pcap | grep "S3Vi"
+
+5. Extracted the encoded string:
+
+      S3ViU1RVe04zdHcwcmtfRm9yZW5zaWNzX1ByMF8yMDI2X0QzY3J5cHRfVENQX1N0cjM0bX0=
+
+6. Decoded it with base64:
+
+      echo "S3ViU1RVe04zdHcwcmtfRm9yZW5zaWNzX1ByMF8yMDI2X0QzY3J5cHRfVENQX1N0cjM0bX0=" \
+      | base64 -d
+
+   Output: KubSTU{N3tw0rk_Forensics_Pr0_2026_D3crypt_TCP_Str34m}
+
+Key Takeaway
+----------------------------------------------------------------
+In network forensics, always look for protocol leaks where
+credentials or flags are transmitted in plaintext or light
+encoding alongside encrypted or custom binary traffic. FTP
+sends credentials in cleartext by design, making it a common
+source of credential exposure in PCAPs. Base64 is not
+encryption -- scanning for known prefixes like S3Vi (KubS)
+or S3ViU1RV (KubSTU) can quickly locate encoded flags hidden
+inside raw packet data.
+
+Flag
+----------------------------------------------------------------
+KubSTU{N3tw0rk_Forensics_Pr0_2026_D3crypt_TCP_Str34m}
+----------------------------------------------------------------
