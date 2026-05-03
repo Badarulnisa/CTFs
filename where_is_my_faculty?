@@ -1,0 +1,129 @@
+where_is_my_faculty?
+===================
+Platform : KubSTU CTF
+Category : OSINT
+Points   : 100
+Flag     : KubSTU{ФИТК_01.02.2014}
+
+------------------------------------------------------------------
+THE CHALLENGE
+------------------------------------------------------------------
+
+A capybara forgot something. A faculty at KubSTU (Kuban State
+Technological University) used to be called IKSiIB (ИКСиИБ).
+It was later renamed. Find:
+
+    1. What is it called now?
+    2. When is its "birthday"?
+
+Flag format: KUBSTU{Abbreviation_DD.MM.YYYY}
+
+------------------------------------------------------------------
+STEP 1 -- DECODE THE UNIVERSITY FROM THE FLAG PREFIX
+------------------------------------------------------------------
+
+The flag format itself gives us the university: KUBSTU = КубГТУ,
+which is Kuban State Technological University, located in
+Krasnodar, Russia.
+
+Their official site: kubstu.ru
+
+Remember: In Russian-language CTFs the flag prefix is almost
+always an abbreviation of the organising university. Decode that
+first and you immediately know where to search.
+
+------------------------------------------------------------------
+STEP 2 -- IDENTIFY THE OLD FACULTY NAME
+------------------------------------------------------------------
+
+The challenge says the old name was IKSiIB, written in the
+Russian-language challenge as ИКСиИБ.
+
+Expanding the abbreviation:
+    Институт Компьютерных Систем и Информационной Безопасности
+    = Institute of Computer Systems and Information Security
+
+This was a faculty/institute at КубГТУ. The challenge says it
+was renamed. We need to find the current name.
+
+Remember: Russian university faculty names change often when they
+merge departments or rebrand. The official university site's
+faculty listing is always the first place to check.
+
+------------------------------------------------------------------
+STEP 3 -- FIND THE CURRENT NAME
+------------------------------------------------------------------
+
+Search query used:
+
+    КубГТУ ИКСиИБ переименован факультет
+
+The official КубГТУ site (kubstu.ru/s-146) and related pages
+confirmed the rename. ИКСиИБ became:
+
+    ФИТК
+    Факультет Информационных Технологий и Кибербезопасности
+    = Faculty of Information Technologies and Cybersecurity
+
+Abbreviation for the flag: ФИТК
+
+------------------------------------------------------------------
+STEP 4 -- FIND THE BIRTHDAY
+------------------------------------------------------------------
+
+The challenge asks for the faculty's "birthday" -- its founding
+or creation date. We searched the official faculty page directly.
+
+Search query:
+
+    ФИТК КубГТУ дата основания день рождения
+
+The official page states the faculty was established on:
+
+    1 February 2014
+
+This is when ИКСиИБ was reorganised/renamed into ФИТК.
+
+Remember: In Russian university CTF challenges, "birthday" of a
+faculty almost always means the official date of establishment
+recorded on the university's own website. Always check the
+"About" or "History" section of the faculty page directly.
+
+------------------------------------------------------------------
+STEP 5 -- FORMAT THE FLAG
+------------------------------------------------------------------
+
+Flag format given: KUBSTU{Abbreviation_DD.MM.YYYY}
+
+    Abbreviation = ФИТК
+    Date         = 01.02.2014   (1 February 2014, zero-padded)
+
+Flag: KubSTU{ФИТК_01.02.2014}
+
+------------------------------------------------------------------
+FULL OSINT TRAIL
+------------------------------------------------------------------
+
+    1. KUBSTU prefix -> kubstu.ru -> КубГТУ Krasnodar
+    2. ИКСиИБ -> faculty name before rename
+    3. kubstu.ru/s-146 -> faculty now called ФИТК
+    4. ФИТК history page -> founded 01.02.2014
+    5. Assemble flag from format
+
+------------------------------------------------------------------
+FLAG
+------------------------------------------------------------------
+
+KubSTU{ФИТК_01.02.2014}
+
+------------------------------------------------------------------
+KEY LESSON
+------------------------------------------------------------------
+
+OSINT challenges at university CTFs are almost always solvable
+from the university's own official website. Do not guess or use
+Wikipedia. Go directly to the primary source (the official faculty
+page), find the exact date they list themselves, and use that.
+The flag format usually tells you exactly what two pieces of
+information you need -- read it carefully before you start
+searching.
